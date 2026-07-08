@@ -35,11 +35,8 @@ if _raw_key:
     except Exception as e:
         print(f"  [WARN] Kimi API 不可用, 将用关键词排序: {e}")
 
-# 飞书推送目标（支持多人）
-FEISHU_USER_IDS = [
-    "ou_0778a44bd227886191ea870d8fe6f515",  # 刘湘
-    "ou_0ae56b7ba5bb9b53150902375ccbd770",  # 刘辰
-]
+# 飞书推送目标
+FEISHU_CHAT_ID = "oc_499e06da9546f8c68dd925318e8753f1"  # AI牛乐群
 FEISHU_APP_ID = os.environ.get("FEISHU_APP_ID", "")
 FEISHU_APP_SECRET = os.environ.get("FEISHU_APP_SECRET", "")
 USE_FEISHU_API = bool(FEISHU_APP_ID and FEISHU_APP_SECRET)  # GitHub Actions 模式
@@ -303,36 +300,33 @@ def send_card(article, img_key):
     card = {"config": {"wide_screen_mode": True}, "header": {"title": {"tag": "plain_text", "content": title}, "template": template}, "elements": elements}
     card_str = json.dumps(card, ensure_ascii=False)
 
-    ok_count = 0
-    for uid in FEISHU_USER_IDS:
-        try:
-            if USE_FEISHU_API:
-                token = get_feishu_token()
-                url = "https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=open_id"
-                body = {"receive_id": uid, "msg_type": "interactive", "content": card_str}
-                headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
-                r = requests.post(url, json=body, headers=headers, timeout=20)
-                data = r.json()
-                if data.get("code") == 0:
-                    ok_count += 1
-                else:
-                    print(f"  [ERROR] 飞书发送({uid[:10]}): {data.get('msg','')}")
-            else:
-                tmp = BASE_DIR / "_tmp_card.json"
-                with open(tmp, 'w', encoding='utf-8') as f:
-                    f.write(card_str)
-                bash_cmd = f"lark-cli im +messages-send --user-id {uid} --as bot --msg-type interactive --content \"$(cat '{tmp.as_posix()}')\""
-                result = subprocess.run(['bash', '-c', bash_cmd],
-                                        capture_output=True, text=True, timeout=20, cwd=str(BASE_DIR))
-                tmp.unlink(missing_ok=True)
-                if result.returncode == 0 and json.loads(result.stdout).get('ok'):
-                    ok_count += 1
-                else:
-                    print(f"  [ERROR] lark-cli({uid[:10]}): {result.stderr[:100]}")
-            time.sleep(1)
-        except Exception as e:
-            print(f"  [ERROR] 发送失败({uid[:10]}): {e}")
-    return ok_count > 0
+    try:
+        if USE_FEISHU_API:
+            token = get_feishu_token()
+            url = "https://open.feishu.cn/open-apis/im/v1/messages?receive_id_type=chat_id"
+            body = {"receive_id": FEISHU_CHAT_ID, "msg_type": "interactive", "content": card_str}
+            headers = {"Authorization": f"Bearer {token}", "Content-Type": "application/json"}
+            r = requests.post(url, json=body, headers=headers, timeout=20)
+            data = r.json()
+            if data.get("code") == 0:
+                return True
+            print(f"  [ERROR] 飞书发送: {data.get('msg','')}")
+            return False
+        else:
+            tmp = BASE_DIR / "_tmp_card.json"
+            with open(tmp, 'w', encoding='utf-8') as f:
+                f.write(card_str)
+            bash_cmd = f"lark-cli im +messages-send --chat-id {FEISHU_CHAT_ID} --as bot --msg-type interactive --content \"$(cat '{tmp.as_posix()}')\""
+            result = subprocess.run(['bash', '-c', bash_cmd],
+                                    capture_output=True, text=True, timeout=20, cwd=str(BASE_DIR))
+            tmp.unlink(missing_ok=True)
+            if result.returncode == 0:
+                return json.loads(result.stdout).get('ok', False)
+            print(f"  [ERROR] {result.stderr[:150]}")
+            return False
+    except Exception as e:
+        print(f"  [ERROR] 发送失败: {e}")
+        return False
 
 
 def ai_filter(articles, sent_data, top_n=8):
