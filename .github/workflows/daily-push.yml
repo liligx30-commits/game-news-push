@@ -5,8 +5,6 @@ on:
     # 北京时间每天 8:55 (UTC 00:55)
     - cron: '55 0 * * *'
   workflow_dispatch:  # 允许手动触发
-  push:
-    branches: [master]  # 每次推送也触发（测试用，确认OK后删掉）
 
 jobs:
   push:
