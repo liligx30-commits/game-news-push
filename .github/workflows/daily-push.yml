@@ -1,0 +1,28 @@
+name: 每日游戏资讯飞书推送
+
+on:
+  schedule:
+    # 北京时间每天 8:55 (UTC 00:55)
+    - cron: '55 0 * * *'
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests openai urllib3
+
+      - name: Run daily push
+        env:
+          FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
+          FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
+          KIMI_API_KEY: ${{ secrets.KIMI_API_KEY }}
+        run: python daily_push.py --max-cards 4

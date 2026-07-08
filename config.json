@@ -1,0 +1,11 @@
+{
+  "kimi_api_key": "${KIMI_API_KEY}",
+  "kimi_api_base": "https://api.moonshot.cn/v1",
+  "kimi_model": "kimi-k2.6",
+  "source_dir": "C:\\Users\\29408\\Desktop\\SVN_Assets\\UI",
+  "supported_extensions": [".png", ".jpg", ".jpeg", ".webp", ".bmp", ".psd"],
+  "vision_extensions": [".png", ".jpg", ".jpeg", ".webp", ".bmp"],
+  "request_delay_seconds": 2,
+  "max_retries": 3,
+  "description_max_chars": 150
+}
