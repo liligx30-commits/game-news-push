@@ -5,6 +5,8 @@ on:
     # 北京时间每天 8:55 (UTC 00:55)
     - cron: '55 0 * * *'
   workflow_dispatch:  # 允许手动触发
+  push:
+    branches: [master]  # 每次推送也触发（测试用，确认OK后删掉）
 
 jobs:
   push:
@@ -20,9 +22,22 @@ jobs:
       - name: Install dependencies
         run: pip install requests openai urllib3
 
+      - name: Restore sent cache
+        uses: actions/cache/restore@v4
+        with:
+          path: sent_items.json
+          key: sent-items-${{ github.run_id }}
+          restore-keys: sent-items-
+
       - name: Run daily push
         env:
           FEISHU_APP_ID: ${{ secrets.FEISHU_APP_ID }}
           FEISHU_APP_SECRET: ${{ secrets.FEISHU_APP_SECRET }}
           KIMI_API_KEY: ${{ secrets.KIMI_API_KEY }}
         run: python daily_push.py --max-cards 4
+
+      - name: Save sent cache
+        uses: actions/cache/save@v4
+        with:
+          path: sent_items.json
+          key: sent-items-${{ github.run_id }}
