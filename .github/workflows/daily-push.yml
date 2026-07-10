@@ -2,9 +2,11 @@ name: 每日游戏资讯飞书推送
 
 on:
   schedule:
-    # 北京时间每天 9:30 (UTC 01:30)
+    # 北京时间每天 9:30 (UTC 01:30) — GitHub自带调度（可能延迟）
     - cron: '30 1 * * *'
-  workflow_dispatch:  # 允许手动触发
+  workflow_dispatch:  # 手动触发
+  repository_dispatch:  # 外部cron准点触发
+    types: [daily-push]
 
 jobs:
   push:
